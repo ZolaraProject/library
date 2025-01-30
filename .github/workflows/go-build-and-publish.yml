@@ -21,13 +21,16 @@ jobs:
         go-version: '1.23.2'
 
     - name: Extract tag from the reference
-      run: ZOLARA_GIT_TAG=$(echo $GITHUB_REF | sed 's/refs\/tags\///')
+      run: |
+        ZOLARA_GIT_TAG=$(echo $GITHUB_REF | sed 's/refs\/tags\///')
+        echo "Tag name is $ZOLARA_GIT_TAG"
+        echo "ZOLARA_GIT_TAG=$ZOLARA_GIT_TAG" >> $GITHUB_ENV
     
     - name: Build with tag
-      run: go build -a -installsuffix cgo -o library-${{ ZOLARA_GIT_TAG }}.tar.gz .
+      run: go build -a -installsuffix cgo -o library-${ZOLARA_GIT_TAG}.tar.gz .
 
     - name: Upload artifact with tag
       uses: actions/upload-artifact@v4
       with:
-        name: library-${{ ZOLARA_GIT_TAG }}
-        path: library-${{ ZOLARA_GIT_TAG }}.tar.gz
+        name: library-${ZOLARA_GIT_TAG}
+        path: library-${ZOLARA_GIT_TAG}.tar.gz
