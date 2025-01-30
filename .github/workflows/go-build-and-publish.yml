@@ -19,12 +19,15 @@ jobs:
       uses: actions/setup-go@v4
       with:
         go-version: '1.23.2'
-    
-    - name: Build
-      run: go build -a -installsuffix cgo -o library-${{ github.ref }}.tar.gz .
 
-    - name: Upload artifact
+    - name: define variable tag removing the reponame prefix from ${{ github.ref }}
+      run: echo "TAG=${{ github.ref/refs\/tags\// }}" >> $GITHUB_ENV
+    
+    - name: Build with tag
+      run: go build -a -installsuffix cgo -o library-${{ env.TAG }}.tar.gz .
+
+    - name: Upload artifact with tag
       uses: actions/upload-artifact@v4
       with:
-        name: library-${{ github.ref }}
-        path: library-${{ github.ref }}.tar.gz
+        name: library-${{ env.TAG }}
+        path: library-${{ env.TAG }}.tar.gz
