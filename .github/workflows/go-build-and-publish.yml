@@ -20,14 +20,14 @@ jobs:
       with:
         go-version: '1.23.2'
 
-    - name: define variable tag removing the reponame prefix from ${{ github.ref }}
-      run: echo "TAG=${{ github.ref/refs\/tags\// }}" >> $GITHUB_ENV
+    - name: Extract tag from the reference
+      run: ZOLARA_GIT_TAG=$(echo $GITHUB_REF | sed 's/refs\/tags\///')
     
     - name: Build with tag
-      run: go build -a -installsuffix cgo -o library-${{ env.TAG }}.tar.gz .
+      run: go build -a -installsuffix cgo -o library-${{ ZOLARA_GIT_TAG }}.tar.gz .
 
     - name: Upload artifact with tag
       uses: actions/upload-artifact@v4
       with:
-        name: library-${{ env.TAG }}
-        path: library-${{ env.TAG }}.tar.gz
+        name: library-${{ ZOLARA_GIT_TAG }}
+        path: library-${{ ZOLARA_GIT_TAG }}.tar.gz
