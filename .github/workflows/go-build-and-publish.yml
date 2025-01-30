@@ -41,5 +41,5 @@ jobs:
     - name: Upload artifact with tag
       uses: actions/upload-artifact@v4
       with:
-        name: library-${ZOLARA_GIT_TAG}
+        name: library-${{ env.ZOLARA_GIT_TAG }}
         path: ${{ github.workspace }}/library-${{ env.ZOLARA_GIT_TAG }}
