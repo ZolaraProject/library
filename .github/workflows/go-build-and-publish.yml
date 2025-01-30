@@ -32,6 +32,9 @@ jobs:
     - name: Build with tag
       run: go build -a -installsuffix cgo -o library-${ZOLARA_GIT_TAG} .
 
+    - name: List files in the directory
+      run: ls -alh
+
     - name: Upload artifact with tag
       uses: actions/upload-artifact@v4
       with:
