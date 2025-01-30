@@ -35,6 +35,9 @@ jobs:
     - name: List files in the directory
       run: ls -alh
 
+    - name: Show the current directory
+      run: pwd
+
     - name: Upload artifact with tag
       uses: actions/upload-artifact@v4
       with:
