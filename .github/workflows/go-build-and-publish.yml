@@ -27,10 +27,10 @@ jobs:
         echo "ZOLARA_GIT_TAG=$ZOLARA_GIT_TAG" >> $GITHUB_ENV
     
     - name: Build with tag
-      run: go build -a -installsuffix cgo -o library-${ZOLARA_GIT_TAG}.tar.gz .
+      run: go build -a -installsuffix cgo -o library-${ZOLARA_GIT_TAG} .
 
     - name: Upload artifact with tag
       uses: actions/upload-artifact@v4
       with:
         name: library-${ZOLARA_GIT_TAG}
-        path: library-${ZOLARA_GIT_TAG}.tar.gz
+        path: library-${ZOLARA_GIT_TAG}
