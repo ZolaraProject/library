@@ -25,6 +25,9 @@ jobs:
         ZOLARA_GIT_TAG=$(echo $GITHUB_REF | sed 's/refs\/tags\///')
         echo "Tag name is $ZOLARA_GIT_TAG"
         echo "ZOLARA_GIT_TAG=$ZOLARA_GIT_TAG" >> $GITHUB_ENV
+
+    - name: Debug ZOLARA_GIT_TAG value
+      run: echo "ZOLARA_GIT_TAG=${ZOLARA_GIT_TAG}"
     
     - name: Build with tag
       run: go build -a -installsuffix cgo -o library-${ZOLARA_GIT_TAG} .
