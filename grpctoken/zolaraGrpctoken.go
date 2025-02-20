@@ -63,43 +63,42 @@ func CreateContextFromHeader(r *http.Request) (context.Context, string) {
 
 	token, err := jwt.Parse(jwtToken.Value, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			logger.Err("unexpected signing method: %v", token.Header["alg"])
+			logger.Err("", "unexpected signing method: %v", token.Header["alg"])
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 
 		return []byte(getEnv("JWT_SECRET")), nil
 	})
 	if err != nil {
-		logger.Err("Error parsing token: %s", err)
+		logger.Err("", "Error parsing token: %s", err)
 		return r.Context(), ""
 	}
 	if !token.Valid {
-		logger.Err("Invalid token: %s", err)
+		logger.Err("", "Invalid token: %s", err)
 		return r.Context(), ""
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		logger.Err("Error getting claims: %s", err)
+		logger.Err("", "Error getting claims: %s", err)
 		return r.Context(), ""
 	}
 
 	zolaraUserId, ok := claims["userId"].(float64)
 	if !ok {
-		logger.Err("Cannot get user id from claims: %s", err)
+		logger.Err("", "Cannot get user id from claims: %s", err)
 		return r.Context(), ""
 	}
 
 	zolaraIsAdmin, ok := claims["admin"].(bool)
 	if !ok {
-		logger.Err("Cannot get user id from claims: %s", err)
+		logger.Err("", "Cannot get user id from claims: %s", err)
 		return r.Context(), ""
 	}
 
-	// transform jwtToken into grpctoken string transforming the jwtToken into grpc token and hiding real values and shortening
 	jwtPayload, err := DecodeJWT(jwtToken.Value)
 	if err != nil {
-		logger.Err("Error decoding JWT token: %s", err)
+		logger.Err("", "Error decoding JWT token: %s", err)
 		return r.Context(), ""
 	}
 

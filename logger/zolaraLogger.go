@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -36,7 +37,7 @@ func init() {
 
 	level = strings.ToUpper(level)
 	if _, ok := logLevels[level]; !ok {
-		logger.Printf("Invalid log level: %s", level)
+		logger.Printf("Invalid log level: %s. Available log levels are ERROR, WARNING, INFO, DEBUG, TRACE. Using default log level INFO", level)
 		level = "INFO"
 		return
 	}
@@ -44,26 +45,26 @@ func init() {
 	logger.Printf("Setting log level to %s", level)
 }
 
-func Err(message string, args ...any) {
+func Err(grpcToken string, message string, args ...any) {
 	if logLevels[level] >= ERR {
-		logger.Printf(message, args...)
+		logger.Printf(fmt.Sprintf("[%s] [ERR] %s", grpcToken, message), args...)
 	}
 }
 
-func Warn(message string, args ...any) {
+func Warn(grpcToken string, message string, args ...any) {
 	if logLevels[level] >= WARN {
-		logger.Printf(message, args...)
+		logger.Printf(fmt.Sprintf("[%s] [WARN] %s", grpcToken, message), args...)
 	}
 }
 
-func Info(message string, args ...any) {
+func Info(grpcToken string, message string, args ...any) {
 	if logLevels[level] >= INFO {
-		logger.Printf(message, args...)
+		logger.Printf(fmt.Sprintf("[%s] [INFO] %s", grpcToken, message), args...)
 	}
 }
 
-func Debug(message string, args ...any) {
+func Debug(grpcToken string, message string, args ...any) {
 	if logLevels[level] >= DEBUG {
-		logger.Printf(message, args...)
+		logger.Printf(fmt.Sprintf("[%s] [DEBUG] %s", grpcToken, message), args...)
 	}
 }
