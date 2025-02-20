@@ -71,12 +71,11 @@ func TransformJwtToGrpcToken(jwtPayload string) string {
 func CreateContextFromHeader(r *http.Request) (context.Context, string) {
 	grpcToken := generateGrpcToken()
 
+	ctx := metadata.AppendToOutgoingContext(r.Context(), "zolara-grpc-token", grpcToken)
+
 	jwtToken, err := r.Cookie("jwt")
 	if err != nil {
-		return r.Context(), ""
-	}
-	if jwtToken == nil {
-		return r.Context(), grpcToken
+		return ctx, grpcToken
 	}
 
 	token, err := jwt.Parse(jwtToken.Value, func(token *jwt.Token) (interface{}, error) {
@@ -122,10 +121,9 @@ func CreateContextFromHeader(r *http.Request) (context.Context, string) {
 
 	// grpctoken := TransformJwtToGrpcToken(jwtPayload)
 
-	ctx := metadata.AppendToOutgoingContext(r.Context(), "zolara-user-id", fmt.Sprintf("%d", int(zolaraUserId)))
+	ctx = metadata.AppendToOutgoingContext(ctx, "zolara-user-id", fmt.Sprintf("%d", int(zolaraUserId)))
 	ctx = metadata.AppendToOutgoingContext(ctx, "zolara-is-admin", fmt.Sprintf("%t", zolaraIsAdmin))
 	// ctx = metadata.AppendToOutgoingContext(ctx, "zolara-grpc-token", grpctoken)
-	ctx = metadata.AppendToOutgoingContext(ctx, "zolara-grpc-token", grpcToken)
 
 	return ctx, grpcToken
 }
