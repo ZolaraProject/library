@@ -15,9 +15,9 @@ type Response struct {
 	Message string `json:"message,omitempty"`
 }
 
-func PermissionCheck(handler func(http.ResponseWriter, *http.Request), requiredPermissions []string) func(http.ResponseWriter, *http.Request) {
+func PermissionCheck(handler func(http.ResponseWriter, *http.Request), requiredPermissions []string, secretKey string) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		permissionList, grpcToken, ok := ExtractPermissionList(r)
+		permissionList, grpcToken, ok := ExtractPermissionList(r, secretKey)
 		logger.Debug(grpcToken, "Permission List: %v", permissionList)
 		logger.Debug(grpcToken, "requiredPermissions: %v", requiredPermissions)
 
@@ -38,8 +38,8 @@ func PermissionCheck(handler func(http.ResponseWriter, *http.Request), requiredP
 	}
 }
 
-func ExtractPermissionList(request *http.Request) ([]string, string, bool) {
-	ctx, grpcToken := grpctoken.CreateContextFromHeader(request)
+func ExtractPermissionList(request *http.Request, secretKey string) ([]string, string, bool) {
+	ctx, grpcToken := grpctoken.CreateContextFromHeader(request, secretKey)
 
 	var permissionList []string
 	var isUser bool
