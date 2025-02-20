@@ -15,7 +15,8 @@ func CreateToken(userId int64, isAdmin bool, secretKey string) (string, error) {
 			"userId": userId,
 			"admin":  isAdmin,
 			"exp":    time.Now().Add(time.Hour * 24).Unix(),
-		})
+		},
+	)
 
 	tokenString, err := token.SignedString([]byte(secretKey))
 	if err != nil {
@@ -44,7 +45,7 @@ func ValidateToken(tokenString string, secretKey []byte) (*jwt.Token, error) {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 
-		return []byte(secretKey), nil
+		return secretKey, nil
 	})
 
 	if err != nil {
@@ -54,7 +55,7 @@ func ValidateToken(tokenString string, secretKey []byte) (*jwt.Token, error) {
 
 	if !token.Valid {
 		logger.Err("", "Invalid token: %s", err)
-		return nil, err
+		return nil, fmt.Errorf("invalid token")
 	}
 
 	return token, nil

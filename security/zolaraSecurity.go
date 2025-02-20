@@ -8,6 +8,7 @@ import (
 
 	"github.com/ZolaraProject/library/grpctoken"
 	"github.com/ZolaraProject/library/logger"
+	"google.golang.org/grpc/metadata"
 )
 
 type Response struct {
@@ -43,17 +44,24 @@ func ExtractPermissionList(request *http.Request, secretKey string) ([]string, s
 
 	var permissionList []string
 	var isUser bool
-	userId := ctx.Value("zolara-user-id")
-	if userId != nil {
+
+	md, ok := metadata.FromOutgoingContext(ctx)
+	if !ok {
+		logger.Err(grpcToken, "Failed to retrieve metadata from context")
+		return []string{}, "", false
+	}
+
+	userId := md.Get("zolara-user-id")
+	if len(userId) > 0 {
 		isUser = true
 	}
 	if isUser {
 		permissionList = append(permissionList, "USER")
 	}
 
-	isAdm := ctx.Value("zolara-is-admin")
+	isAdm := md.Get("zolara-is-admin")
 	if isAdm != nil {
-		isAdmin, err := strconv.ParseBool(isAdm.(string))
+		isAdmin, err := strconv.ParseBool(isAdm[0])
 		if err != nil {
 			return []string{}, "", false
 		}
