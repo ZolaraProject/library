@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+	"math/rand"
 	"net/http"
 	"os"
 	"strings"
@@ -15,6 +16,18 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"google.golang.org/grpc/metadata"
 )
+
+var (
+	grpcTokenAlphabet = []byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ23456789")
+)
+
+func generateGrpcToken() string {
+	tk := make([]byte, 16)
+	for i := range tk {
+		tk[i] = grpcTokenAlphabet[rand.Intn(len(grpcTokenAlphabet))]
+	}
+	return string(tk)
+}
 
 func DecodeJWT(token string) (string, error) {
 	parts := strings.Split(token, ".")
@@ -56,9 +69,14 @@ func TransformJwtToGrpcToken(jwtPayload string) string {
 }
 
 func CreateContextFromHeader(r *http.Request) (context.Context, string) {
+	grpcToken := generateGrpcToken()
+
 	jwtToken, err := r.Cookie("jwt")
 	if err != nil {
 		return r.Context(), ""
+	}
+	if jwtToken == nil {
+		return r.Context(), grpcToken
 	}
 
 	token, err := jwt.Parse(jwtToken.Value, func(token *jwt.Token) (interface{}, error) {
@@ -96,19 +114,20 @@ func CreateContextFromHeader(r *http.Request) (context.Context, string) {
 		return r.Context(), ""
 	}
 
-	jwtPayload, err := DecodeJWT(jwtToken.Value)
-	if err != nil {
-		logger.Err("", "Error decoding JWT token: %s", err)
-		return r.Context(), ""
-	}
+	// jwtPayload, err := DecodeJWT(jwtToken.Value)
+	// if err != nil {
+	// 	logger.Err("", "Error decoding JWT token: %s", err)
+	// 	return r.Context(), ""
+	// }
 
-	grpctoken := TransformJwtToGrpcToken(jwtPayload)
+	// grpctoken := TransformJwtToGrpcToken(jwtPayload)
 
 	ctx := metadata.AppendToOutgoingContext(r.Context(), "zolara-user-id", fmt.Sprintf("%d", int(zolaraUserId)))
 	ctx = metadata.AppendToOutgoingContext(ctx, "zolara-is-admin", fmt.Sprintf("%t", zolaraIsAdmin))
-	ctx = metadata.AppendToOutgoingContext(ctx, "zolara-grpc-token", grpctoken)
+	// ctx = metadata.AppendToOutgoingContext(ctx, "zolara-grpc-token", grpctoken)
+	ctx = metadata.AppendToOutgoingContext(ctx, "zolara-grpc-token", grpcToken)
 
-	return ctx, grpctoken
+	return ctx, grpcToken
 }
 
 func getEnv(key string) string {
