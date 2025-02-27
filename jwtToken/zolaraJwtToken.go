@@ -1,13 +1,38 @@
 package jwtToken
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/ZolaraProject/library/logger"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/mediocregopher/radix/v3"
 )
+
+func CheckTokenBlacklist(r *http.Request, ctx context.Context, redisClient *radix.Pool) (bool, error) {
+	var isBlacklistedStr string
+	err := redisClient.Do(radix.Cmd(&isBlacklistedStr, "GET", "jwt_blacklist:"+GetJwtToken(r)))
+	if err != nil {
+		return false, err
+	}
+
+	return len(isBlacklistedStr) > 0, nil
+}
+
+func BlacklistToken(r *http.Request, ctx context.Context, redisClient *radix.Pool) error {
+	err := redisClient.Do(radix.FlatCmd(nil, "SET", "jwt_blacklist:"+GetJwtToken(r), "1"))
+	if err != nil {
+		return err
+	}
+
+	err = redisClient.Do(radix.FlatCmd(nil, "EXPIRE", "jwt_blacklist:"+GetJwtToken(r), 60*60*24))
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
 func CreateToken(userId int64, isAdmin bool, secretKey string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256,
@@ -24,6 +49,16 @@ func CreateToken(userId int64, isAdmin bool, secretKey string) (string, error) {
 	}
 
 	return tokenString, nil
+}
+
+func ExpireToken(w http.ResponseWriter) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     "jwt",
+		Value:    "",
+		Expires:  time.Now().Add(-time.Hour),
+		HttpOnly: false,
+		SameSite: http.SameSiteNoneMode,
+	})
 }
 
 func SetTokenCookie(w http.ResponseWriter, token string) {
@@ -77,14 +112,18 @@ func GetTokanClaims(tokenString string, secretKey []byte) (*jwt.MapClaims, error
 	return &claims, nil
 }
 
-func GetUserIdFromToken(r *http.Request, secretKey string) (int64, error) {
+func GetJwtToken(r *http.Request) string {
 	cookie, err := r.Cookie("jwt")
 	if err != nil {
 		logger.Err("", "Failed to get cookie: %s", err)
-		return 0, fmt.Errorf("Unauthorized")
+		return ""
 	}
 
-	claims, err := GetTokanClaims(cookie.Value, []byte(secretKey))
+	return cookie.Value
+}
+
+func GetUserIdFromToken(r *http.Request, secretKey string) (int64, error) {
+	claims, err := GetTokanClaims(GetJwtToken(r), []byte(secretKey))
 	if err != nil {
 		logger.Err("", "Error getting claims: %s", err)
 		return 0, fmt.Errorf("Unauthorized")
@@ -100,13 +139,7 @@ func GetUserIdFromToken(r *http.Request, secretKey string) (int64, error) {
 }
 
 func GetUserIsAdminFromToken(r *http.Request, secretKey string) (bool, error) {
-	cookie, err := r.Cookie("jwt")
-	if err != nil {
-		logger.Err("", "Failed to get cookie: %s", err)
-		return false, fmt.Errorf("Unauthorized")
-	}
-
-	claims, err := GetTokanClaims(cookie.Value, []byte(secretKey))
+	claims, err := GetTokanClaims(GetJwtToken(r), []byte(secretKey))
 	if err != nil {
 		logger.Err("", "Error getting claims: %s", err)
 		return false, fmt.Errorf("Unauthorized")
