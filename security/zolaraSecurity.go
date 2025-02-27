@@ -36,7 +36,14 @@ func PermissionCheck(handler func(http.ResponseWriter, *http.Request), requiredP
 					return
 				}
 			}
+		} else {
+			w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+			w.WriteHeader(http.StatusUnauthorized)
+			res, _ := json.Marshal(Response{Message: "Unauthorized", Token: grpcToken})
+			w.Write(res)
+			return
 		}
+
 		handler(w, r)
 	}
 }
