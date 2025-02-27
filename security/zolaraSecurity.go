@@ -1,7 +1,6 @@
 package security
 
 import (
-	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -42,26 +41,21 @@ func PermissionCheck(handler func(http.ResponseWriter, *http.Request), requiredP
 	}
 }
 
-func CheckJwtValidity(r *http.Request, ctx context.Context, grpcToken string, RedisPool *radix.Pool) (bool, error) {
-	check, err := jwtToken.CheckTokenBlacklist(r, ctx, RedisPool)
-	if err != nil {
-		logger.Err(grpcToken, "failed to check token blacklist: %s", err)
-		return false, err
-	}
-
-	return check, nil
-}
-
 func ExtractPermissionList(request *http.Request, secretKey string, redisPool *radix.Pool) ([]string, string, bool) {
 	ctx, grpcToken := grpctoken.CreateContextFromHeader(request, secretKey)
 
-	isValid, err := CheckJwtValidity(request, ctx, grpcToken, redisPool)
-	logger.Debug(grpcToken, "Token validity: %v", isValid)
+	isBlacklisted, err := jwtToken.CheckTokenBlacklist(request, ctx, redisPool)
+	if err != nil {
+		logger.Err(grpcToken, "failed to check token blacklist: %s", err)
+		return []string{}, "", false
+	}
+
+	logger.Debug(grpcToken, "Token is in blacklist: %v", isBlacklisted)
 	if err != nil {
 		logger.Err(grpcToken, "Failed to check jwt validity: %s", err)
 		return []string{}, "", false
 	}
-	if !isValid {
+	if isBlacklisted {
 		logger.Err(grpcToken, "Token is blacklisted")
 		return []string{}, "", false
 	}
